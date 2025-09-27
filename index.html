@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joint Fellowship Team Randomizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 1400px;
+            width: 100%;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 2.2em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .setup-screen {
+            text-align: center;
+        }
+
+        .config-section {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 15px;
+            border: 2px solid #e6e8ff;
+        }
+
+        .config-section h3 {
+            margin-bottom: 12px;
+            color: #555;
+            font-size: 1.1em;
+        }
+
+        .config-section h4 {
+            margin-bottom: 8px;
+            color: #666;
+            font-size: 1em;
+        }
+
+        .option-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .option-btn {
+            padding: 8px 16px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 50px;
+        }
+
+        .option-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .option-btn.selected {
+            background: #667eea;
+            color: white;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .team-config-display {
+            margin: 15px 0;
+            padding: 12px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        .start-btn {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            margin-top: 15px;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .start-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #equalSizeOptions {
+            margin-top: 10px;
+        }
+
+        /* Audio Controls */
+        .audio-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(45deg, #764ba2, #667eea);
+            border-radius: 15px;
+            color: white;
+        }
+
+        .audio-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .audio-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .audio-toggle.active {
+            background: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .volume-slider {
+            width: 120px;
+            height: 8px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            outline: none;
+            appearance: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes screenShake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-3px) rotate(1deg); }
+            20%, 40%, 60%, 80% { transform: translateX(3px) rotate(-1deg); }
+        }
+
+        .randomization-screen {
+            display: none;
+            position: relative;
+        }
+
+        .randomization-screen::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 20%, rgba(0, 0, 0, 0.1) 100%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .teams-container {
+            display: grid;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .teams-container.two-teams {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .teams-container.three-teams {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .teams-container.four-teams {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .teams-container.five-teams {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .team {
+            background: #f8f9ff;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .team h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.6em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .team-alpha h2 { color: #667eea; }
+        .team-beta h2 { color: #764ba2; }
+        .team-gamma h2 { color: #ff6b6b; }
+        .team-delta h2 { color: #4ecdc4; }
+        .team-epsilon h2 { color: #45b7d1; }
+
+        .team h2::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, currentColor, transparent);
+            border-radius: 2px;
+        }
+
+        .member-slot {
+            background: white;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            color: #555;
+            border: 2px solid #eee;
+            min-height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 0.95em;
+        }
+
+        .member-slot.animating {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3);
+            background-size: 600% 600%;
+            animation: intenseDrama 0.15s ease-in-out infinite;
+            color: white;
+            border: 3px solid #fff;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(255, 107, 107, 0.6);
+            transform: scale(1.05);
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes intenseDrama {
+            0% { 
+                background-position: 0% 50%; 
+                box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(255, 107, 107, 0.6);
+                transform: scale(1.05) rotate(-1deg);
+            }
+            25% { 
+                background-position: 100% 50%; 
+                box-shadow: 0 0 25px rgba(78, 205, 196, 0.8), 0 0 50px rgba(69, 183, 209, 0.6);
+                transform: scale(1.08) rotate(1deg);
+            }
+            50% { 
+                background-position: 200% 50%; 
+                box-shadow: 0 0 30px rgba(150, 206, 180, 0.8), 0 0 60px rgba(254, 202, 87, 0.6);
+                transform: scale(1.05) rotate(-0.5deg);
+            }
+            75% { 
+                background-position: 300% 50%; 
+                box-shadow: 0 0 25px rgba(255, 159, 243, 0.8), 0 0 50px rgba(255, 107, 107, 0.6);
+                transform: scale(1.07) rotate(0.5deg);
+            }
+            100% { 
+                background-position: 400% 50%; 
+                box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(78, 205, 196, 0.6);
+                transform: scale(1.05) rotate(-1deg);
+            }
+        }
+
+        .member-slot.final {
+            animation: epicReveal 1s ease-out;
+        }
+
+        @keyframes epicReveal {
+            0% {
+                transform: scale(1.3) rotate(5deg);
+                background: linear-gradient(45deg, #4CAF50, #8BC34A, #CDDC39);
+                color: white;
+                box-shadow: 0 0 30px rgba(76, 175, 80, 0.8), 0 0 60px rgba(139, 195, 74, 0.6);
+                border: 3px solid #fff;
+            }
+            30% {
+                transform: scale(1.4) rotate(-3deg);
+                box-shadow: 0 0 40px rgba(76, 175, 80, 1), 0 0 80px rgba(139, 195, 74, 0.8);
+            }
+            60% {
+                transform: scale(1.2) rotate(2deg);
+                box-shadow: 0 0 25px rgba(76, 175, 80, 0.6), 0 0 50px rgba(139, 195, 74, 0.4);
+            }
+            100% {
+                transform: scale(1);
+                background: white;
+                color: #333;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+                border: 2px solid #eee;
+            }
+        }
+
+        /* Updated denomination colors - Red, Blue, Orange */
+        .sbcc { 
+            border-left: 8px solid #e53e3e; 
+            background: linear-gradient(90deg, rgba(229, 62, 62, 0.1), white);
+            position: relative;
+        }
+        
+        .cbcc { 
+            border-left: 8px solid #3182ce; 
+            background: linear-gradient(90deg, rgba(49, 130, 206, 0.1), white);
+            position: relative;
+        }
+        
+        .pbcc { 
+            border-left: 8px solid #ff8c00; 
+            background: linear-gradient(90deg, rgba(255, 140, 0, 0.1), white);
+            position: relative;
+        }
+
+        /* Add denomination badges */
+        .sbcc::after {
+            content: "SBCC";
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            background: #e53e3e;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: bold;
+            text-shadow: none;
+            box-shadow: 0 2px 4px rgba(229, 62, 62, 0.3);
+        }
+
+        .cbcc::after {
+            content: "CBCC";
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            background: #3182ce;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: bold;
+            text-shadow: none;
+            box-shadow: 0 2px 4px rgba(49, 130, 206, 0.3);
+        }
+
+        .pbcc::after {
+            content: "PBCC";
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            background: #ff8c00;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: bold;
+            text-shadow: none;
+            box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);
+        }
+
+        /* Make member names more prominent with denomination styling */
+        .member-slot.sbcc {
+            border-left: 8px solid #e53e3e;
+            background: linear-gradient(90deg, rgba(229, 62, 62, 0.08), white);
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .member-slot.cbcc {
+            border-left: 8px solid #3182ce;
+            background: linear-gradient(90deg, rgba(49, 130, 206, 0.08), white);
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .member-slot.pbcc {
+            border-left: 8px solid #ff8c00;
+            background: linear-gradient(90deg, rgba(255, 140, 0, 0.08), white);
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .reset-btn {
+            display: block;
+            margin: 30px auto 0;
+            padding: 15px 30px;
+            background: #666;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            background: #555;
+            transform: translateY(-2px);
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9ff, #e6e8ff);
+            border-radius: 15px;
+            border: 2px solid #d6d8f0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.1em;
+            color: #333;
+            font-weight: bold;
+            padding: 12px 20px;
+            background: white;
+            border-radius: 25px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .legend-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .legend-color {
+            width: 24px;
+            height: 18px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .teams-container {
+                grid-template-columns: 1fr !important;
+                gap: 20px;
+            }
+            
+            .option-buttons {
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+            }
+            
+            .option-btn {
+                width: 80px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+
+            .member-slot {
+                font-size: 0.9em;
+                padding: 10px;
+                min-height: 40px;
+            }
+
+            .audio-controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .volume-control {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎲 Joint Fellowship Team Randomizer</h1>
+        
+        <div class="audio-controls">
+            <button class="audio-toggle" id="musicToggle">🎵 Background Music</button>
+            <button class="audio-toggle" id="sfxToggle">🔊 Sound Effects</button>
+            <div class="volume-control">
+                <span>🔉 Volume:</span>
+                <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="70">
+            </div>
+        </div>
+        
+        <div class="setup-screen" id="setupScreen">
+            <div class="config-section">
+                <h3>Number of Teams:</h3>
+                <div class="option-buttons" id="teamCountButtons">
+                    <button class="option-btn" data-teams="2">2</button>
+                    <button class="option-btn" data-teams="3">3</button>
+                    <button class="option-btn" data-teams="4">4</button>
+                    <button class="option-btn" data-teams="5">5</button>
+                </div>
+            </div>
+
+            <div class="config-section">
+                <h3>Team Size Distribution:</h3>
+                <div class="option-buttons" id="distributionButtons">
+                    <button class="option-btn" data-distribution="equal">Equal Size</button>
+                    <button class="option-btn" data-distribution="flexible">Flexible Size</button>
+                </div>
+                
+                <div id="equalSizeOptions" style="display: none;">
+                    <h4>Members per Team:</h4>
+                    <div class="option-buttons" id="memberCountButtons">
+                        <button class="option-btn" data-members="7">7</button>
+                        <button class="option-btn" data-members="8">8</button>
+                        <button class="option-btn" data-members="9">9</button>
+                        <button class="option-btn" data-members="10">10</button>
+                        <button class="option-btn" data-members="11">11</button>
+                        <button class="option-btn" data-members="12">12</button>
+                        <button class="option-btn" data-members="13">13</button>
+                        <button class="option-btn" data-members="14">14</button>
+                        <button class="option-btn" data-members="15">15</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="team-config-display" id="configDisplay">
+                Please select number of teams and distribution type
+            </div>
+            
+            <button class="start-btn" id="startBtn" disabled>🚀 Start Randomization</button>
+        </div>
+
+        <div class="randomization-screen" id="randomizationScreen">
+            <div class="teams-container" id="teamsContainer">
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color sbcc" style="background: #e53e3e;"></div>
+                    <span><strong>SBCC</strong></span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color cbcc" style="background: #3182ce;"></div>
+                    <span><strong>CBCC</strong></span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color pbcc" style="background: #ff8c00;"></div>
+                    <span><strong>PBCC</strong></span>
+                </div>
+            </div>
+            
+            <button class="reset-btn" id="resetBtn">🔄 New Randomization</button>
+        </div>
+    </div>
+
+    <!-- Audio Elements -->
+    <audio id="backgroundMusic" loop>
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+D9yXosBSuCz/PSgykEJXjM7++SGAoUYrjm56JOAABfGzT23JcAABs9n+vFdypGH2PMNx+2u3u6sB3H2B/6PkpIUEd8PEz/BjGxs2rHVNzpY+4GQhMJNPEfnPv+YyGiK2TjpGVXq5/8HQBSm97gLNqLRoR/RgJt1BRGQFhGKkCrKr4MsRCHXpgFg5JyXbzlrNVxWJL9PF+pCQCHBkfSCJVJNBIE+EEBpYD5DaijDyEIJOCNZV2KUC7r7ZM7jw1aBqwA85Kgq9wVv/xT8UDBUEhJr6x5VcfC7+kX+NzEPUNmO2T2UoSVh4w+nPB8YZdFRCMbYNLNzGjPnf0GcHMHO5Lk8UWRpGmSn9RUXJJV0Xq4PQ8+fEf" type="audio/wav">
+    </audio>
+
+    <script>
+        // All members data - YOU CAN ADD NEW NAMES HERE!
+        const members = {
+            SBCC: [
+                "Gian Troy Cahigas", "Joshua Ramos", "Kim Morales", "Nathalie R. Rizaldo",
+                "Raf Rossen Cambel", "Rhien Magcalas", "Gab Cortez", "Jez Ramos",
+                "Vona Caguite", "Hannah Tominez", "Jhuliene Dasic", "Jashlyn Sinalo",
+                "Romico Apabricio", "Heizel Tominez", "Eunice Manalo", "Erich Caliwan",
+                "Erin Caliwan", "Pia Deleon", "Voni Caguite", "Drix Desipeda",
+                "Terenz Dasic", "Jessa Mae Ramos"
+            ],
+            CBCC: [
+                "Vanesa", "Harvey", "Jaira", "Carl", "Jordan", "Kim", "Jared"
+            ],
+            PBCC: [
+                "Martha", "Mary", "Yumi", "Patz", "Vallen", "Lawrence",
+                "Joshua", "Kuya Glenn", "Alejandra", "Calix", "Sam",
+                "Amphie", "Yuckie", "Bon"
+            ]
+        };
+
+        // Special members that need constraint - AT LEAST ONE from each group MUST be selected
+        const specialMembers = {
+            SBCC: ["Kim Morales", "Rhien Magcalas", "Gian Troy Cahigas"],
+            CBCC: ["Vanesa", "Harvey", "Carl", "Jared", "Jaira"],
+            PBCC: ["Martha", "Mary", "Lawrence", "Patz"]
+        };
+
+        const teamNames = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon'];
+        const teamEmojis = ['⭐', '🌟', '🔥', '⚡', '🎯'];
+        const teamClasses = ['team-alpha', 'team-beta', 'team-gamma', 'team-delta', 'team-epsilon'];
+
+        let selectedTeamCount = 0;
+        let selectedMemberCount = 0;
+        let selectedDistribution = '';
+        let isAnimating = false;
+        
+        // Audio variables
+        let musicEnabled = false;
+        let sfxEnabled = true;
+        let audioContext;
+        let backgroundMusic;
+        let currentVolume = 0.7;
+
+        // Initialize audio system
+        function initAudioSystem() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                backgroundMusic = document.getElementById('backgroundMusic');
+                backgroundMusic.volume = currentVolume;
+                
+                // Log audio context state for debugging
+                console.log('Audio context state:', audioContext.state);
+                
+            } catch (e) {
+                console.warn('Audio context not supported:', e);
+            }
+        }
+
+        // Ensure audio context is resumed on any user interaction
+        function resumeAudioContext() {
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    console.log('Audio context resumed');
+                });
+            }
+        }
+
+        // Generate intense tones with multiple layers for epic sound effects
+        function playIntenseTone(frequencies, duration, type = 'sawtooth', volume = 0.3) {
+            if (!sfxEnabled || !audioContext) return;
+            
+            try {
+                // Create multiple oscillators for richer sound
+                frequencies.forEach((freq, index) => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+                    oscillator.type = type;
+                    
+                    // Stagger the volume for layered effect
+                    const layerVolume = (currentVolume * volume) / (index + 1);
+                    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(layerVolume, audioContext.currentTime + 0.02);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + duration);
+                });
+            } catch (e) {
+                console.warn('Error playing intense tone:', e);
+            }
+        }
+
+        // Epic sound effects
+        function playClickSound() {
+            // Powerful click with bass punch
+            playIntenseTone([800, 400, 200], 0.12, 'square', 0.4);
+        }
+
+        function playStartSound() {
+            // EPIC ORCHESTRAL-STYLE START
+            if (!sfxEnabled || !audioContext) return;
+            
+            // Dramatic rising sequence with harmonics
+            const startSequence = [
+                { freqs: [80, 160, 240], duration: 0.3, delay: 0 },
+                { freqs: [100, 200, 300, 400], duration: 0.35, delay: 150 },
+                { freqs: [130, 260, 390, 520], duration: 0.4, delay: 300 },
+                { freqs: [160, 320, 480, 640, 800], duration: 0.45, delay: 450 },
+                { freqs: [200, 400, 600, 800, 1000, 1200], duration: 0.8, delay: 600 }
+            ];
+            
+            startSequence.forEach(({ freqs, duration, delay }) => {
+                setTimeout(() => {
+                    playIntenseTone(freqs, duration, 'sawtooth', 0.6);
+                }, delay);
+            });
+            
+            // Add some dramatic percussion-like hits
+            setTimeout(() => playIntenseTone([60, 120, 180], 0.2, 'triangle', 0.8), 200);
+            setTimeout(() => playIntenseTone([70, 140, 210], 0.2, 'triangle', 0.8), 400);
+            setTimeout(() => playIntenseTone([80, 160, 240], 0.3, 'triangle', 1.0), 600);
+        }
+
+        function playSpinSound() {
+            // Intense rapid-fire beeping with harmonics
+            playIntenseTone([600, 800, 1000, 1200], 0.08, 'square', 0.5);
+        }
+
+        function playRevealSound() {
+            // TRIUMPHANT FANFARE with massive chord
+            if (!sfxEnabled || !audioContext) return;
+            
+            // Major chord with overtones
+            const revealChord = [
+                { freqs: [523, 659, 784, 1047, 1319], duration: 0.6, delay: 0 }, // C major chord
+                { freqs: [587, 740, 880, 1175, 1480], duration: 0.4, delay: 200 }, // D major chord 
+                { freqs: [659, 831, 988, 1319, 1661], duration: 0.8, delay: 350 } // E major chord
+            ];
+            
+            revealChord.forEach(({ freqs, duration, delay }) => {
+                setTimeout(() => {
+                    playIntenseTone(freqs, duration, 'sine', 0.7);
+                }, delay);
+            });
+            
+            // Add some sparkle with high frequencies
+            setTimeout(() => playIntenseTone([2000, 2500, 3000], 0.3, 'sine', 0.3), 100);
+            setTimeout(() => playIntenseTone([2200, 2700, 3200], 0.3, 'sine', 0.3), 250);
+        }
+
+        function playCompletionSound() {
+            // MASSIVE EPIC FINALE
+            if (!sfxEnabled || !audioContext) return;
+            
+            // Orchestral finale with multiple layers
+            const finaleSequence = [
+                { freqs: [130, 164, 196, 261, 329], duration: 0.8, delay: 0 },    // C major
+                { freqs: [147, 185, 220, 294, 370], duration: 0.8, delay: 200 },  // D major  
+                { freqs: [165, 208, 247, 330, 415], duration: 0.8, delay: 400 },  // E major
+                { freqs: [175, 220, 262, 349, 440], duration: 0.8, delay: 600 },  // F major
+                { freqs: [196, 247, 294, 392, 494], duration: 1.2, delay: 800 },  // G major - final chord
+            ];
+            
+            finaleSequence.forEach(({ freqs, duration, delay }) => {
+                setTimeout(() => {
+                    playIntenseTone(freqs, duration, 'sine', 0.8);
+                    // Add octave doubling for power
+                    playIntenseTone(freqs.map(f => f * 2), duration, 'triangle', 0.4);
+                }, delay);
+            });
+            
+            // Epic bass hits
+            setTimeout(() => playIntenseTone([65, 130], 0.3, 'sawtooth', 1.0), 0);
+            setTimeout(() => playIntenseTone([73, 147], 0.3, 'sawtooth', 1.0), 200);
+            setTimeout(() => playIntenseTone([82, 165], 0.3, 'sawtooth', 1.0), 400);
+            setTimeout(() => playIntenseTone([87, 175], 0.3, 'sawtooth', 1.0), 600);
+            setTimeout(() => playIntenseTone([98, 196], 0.6, 'sawtooth', 1.2), 800);
+            
+            // Sparkle effect at the end
+            setTimeout(() => {
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => {
+                        playIntenseTone([1500 + (i * 300), 2000 + (i * 400)], 0.2, 'sine', 0.4);
+                    }, i * 100);
+                }
+            }, 1000);
+        }
+
+        // EPIC INTENSE Background music using Web Audio API
+        let musicTimeout;
+        let currentMusicOscillators = [];
+        let musicGainNodes = [];
+        let bassOscillator = null;
+        let bassGainNode = null;
+        
+        function playBackgroundMusic() {
+            if (!musicEnabled || !audioContext) return;
+            
+            stopBackgroundMusic(); // Stop any existing music first
+            
+            // EPIC CINEMATIC MELODY - Think movie trailer music!
+            const epicMelody = [
+                // Main theme - dramatic and building
+                {notes: [130, 165, 196], duration: 1.0, intensity: 0.4}, // C minor chord
+                {notes: [123, 155, 185], duration: 0.8, intensity: 0.5}, // B diminished
+                {notes: [110, 139, 165], duration: 1.2, intensity: 0.6}, // A minor
+                {notes: [123, 155, 185, 220], duration: 0.6, intensity: 0.7}, // B dim with bass
+                {notes: [130, 165, 196, 261], duration: 1.0, intensity: 0.8}, // C minor with octave
+                {notes: [147, 185, 220, 294], duration: 0.8, intensity: 0.6}, // D minor
+                {notes: [165, 208, 247, 330], duration: 1.4, intensity: 0.9}, // E minor - climax
+                {notes: [130, 165, 196, 261, 330], duration: 1.0, intensity: 0.5}, // Back to C minor
+                
+                // Bridge section - more intense
+                {notes: [98, 123, 147, 196], duration: 0.8, intensity: 0.7}, // G minor
+                {notes: [110, 139, 165, 220], duration: 0.6, intensity: 0.8}, // A minor
+                {notes: [123, 155, 185, 247], duration: 1.0, intensity: 0.9}, // B diminished
+                {notes: [130, 165, 196, 261, 330, 392], duration: 1.6, intensity: 1.0}, // MASSIVE C minor chord
+            ];
+            
+            let currentChord = 0;
+            
+            // Start the epic bass line
+            startEpicBassLine();
+            
+            function playMusicChord(notes, duration, intensity) {
+                if (!musicEnabled || !audioContext) return;
+                
+                try {
+                    // Stop previous chord
+                    stopCurrentChord();
+                    
+                    // Create oscillators for each note in the chord
+                    notes.forEach((frequency, index) => {
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        
+                        // Connect audio nodes
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        
+                        // Configure oscillator - mix of waveforms for richness
+                        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                        oscillator.type = index % 2 === 0 ? 'sawtooth' : 'square'; // Alternate for richness
+                        
+                        // Configure gain with dramatic envelope
+                        const musicVolume = currentVolume * 0.25 * intensity; // Louder and more dynamic
+                        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                        gainNode.gain.linearRampToValueAtTime(musicVolume, audioContext.currentTime + 0.1);
+                        gainNode.gain.linearRampToValueAtTime(musicVolume * 0.8, audioContext.currentTime + duration * 0.7);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+                        
+                        // Start the note
+                        oscillator.start(audioContext.currentTime);
+                        oscillator.stop(audioContext.currentTime + duration);
+                        
+                        // Store references for cleanup
+                        currentMusicOscillators.push(oscillator);
+                        musicGainNodes.push(gainNode);
+                    });
+                    
+                } catch (e) {
+                    console.warn('Error playing music chord:', e);
+                }
+            }
+            
+            function startEpicBassLine() {
+                if (!musicEnabled || !audioContext) return;
+                
+                // Deep, pounding bass line
+                const bassNotes = [65, 73, 55, 61]; // Low C, D, G, B
+                let bassIndex = 0;
+                
+                function playBassNote() {
+                    if (!musicEnabled || !audioContext) return;
+                    
+                    try {
+                        // Stop previous bass note
+                        if (bassOscillator) {
+                            bassOscillator.stop();
+                            bassOscillator = null;
+                        }
+                        
+                        bassOscillator = audioContext.createOscillator();
+                        bassGainNode = audioContext.createGain();
+                        
+                        bassOscillator.connect(bassGainNode);
+                        bassGainNode.connect(audioContext.destination);
+                        
+                        bassOscillator.frequency.setValueAtTime(bassNotes[bassIndex], audioContext.currentTime);
+                        bassOscillator.type = 'sawtooth'; // Deep bass sound
+                        
+                        const bassVolume = currentVolume * 0.3;
+                        bassGainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                        bassGainNode.gain.linearRampToValueAtTime(bassVolume, audioContext.currentTime + 0.02);
+                        bassGainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.8);
+                        
+                        bassOscillator.start(audioContext.currentTime);
+                        bassOscillator.stop(audioContext.currentTime + 0.8);
+                        
+                        bassIndex = (bassIndex + 1) % bassNotes.length;
+                        
+                        // Schedule next bass note
+                        setTimeout(playBassNote, 800);
+                        
+                    } catch (e) {
+                        console.warn('Error playing bass note:', e);
+                    }
+                }
+                
+                playBassNote();
+            }
+            
+            function stopCurrentChord() {
+                // Clean up current oscillators
+                currentMusicOscillators.forEach(osc => {
+                    try {
+                        osc.stop();
+                    } catch (e) {
+                        // Oscillator might already be stopped
+                    }
+                });
+                currentMusicOscillators = [];
+                musicGainNodes = [];
+            }
+            
+            function playNextChord() {
+                if (!musicEnabled || !audioContext) return;
+                
+                const chord = epicMelody[currentChord];
+                playMusicChord(chord.notes, chord.duration, chord.intensity);
+                
+                currentChord = (currentChord + 1) % epicMelody.length;
+                
+                // Schedule next chord
+                musicTimeout = setTimeout(playNextChord, chord.duration * 1000 + 100);
+            }
+            
+            // Start the epic melody
+            playNextChord();
+        }
+
+        function stopBackgroundMusic() {
+            musicEnabled = false; // This will stop the loop
+            
+            if (musicTimeout) {
+                clearTimeout(musicTimeout);
+                musicTimeout = null;
+            }
+            
+            // Stop all music oscillators
+            currentMusicOscillators.forEach(osc => {
+                try {
+                    osc.stop();
+                } catch (e) {
+                    // Oscillator might already be stopped
+                }
+            });
+            currentMusicOscillators = [];
+            
+            // Stop bass
+            if (bassOscillator) {
+                try {
+                    bassOscillator.stop();
+                } catch (e) {
+                    // Oscillator might already be stopped
+                }
+                bassOscillator = null;
+            }
+            
+            musicGainNodes = [];
+            bassGainNode = null;
+        }
+
+        // Setup event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            initAudioSystem();
+            
+            const teamCountButtons = document.querySelectorAll('#teamCountButtons .option-btn');
+            const memberCountButtons = document.querySelectorAll('#memberCountButtons .option-btn');
+            const distributionButtons = document.querySelectorAll('#distributionButtons .option-btn');
+            const startBtn = document.getElementById('startBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const configDisplay = document.getElementById('configDisplay');
+            const equalSizeOptions = document.getElementById('equalSizeOptions');
+            
+            // Audio controls
+            const musicToggle = document.getElementById('musicToggle');
+            const sfxToggle = document.getElementById('sfxToggle');
+            const volumeSlider = document.getElementById('volumeSlider');
+
+            // Initialize audio controls
+            musicToggle.addEventListener('click', function() {
+                musicEnabled = !musicEnabled;
+                this.classList.toggle('active', musicEnabled);
+                
+                if (musicEnabled) {
+                    // Ensure audio context is running
+                    if (audioContext && audioContext.state === 'suspended') {
+                        audioContext.resume().then(() => {
+                            playBackgroundMusic();
+                        });
+                    } else {
+                        playBackgroundMusic();
+                    }
+                } else {
+                    stopBackgroundMusic();
+                }
+                
+                playClickSound();
+            });
+
+            sfxToggle.classList.add('active'); // SFX enabled by default
+            sfxToggle.addEventListener('click', function() {
+                sfxEnabled = !sfxEnabled;
+                this.classList.toggle('active', sfxEnabled);
+                playClickSound();
+            });
+
+            volumeSlider.addEventListener('input', function() {
+                currentVolume = this.value / 100;
+                if (backgroundMusic) {
+                    backgroundMusic.volume = currentVolume;
+                }
+            });
+
+            teamCountButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    playClickSound();
+                    teamCountButtons.forEach(b => b.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedTeamCount = parseInt(this.dataset.teams);
+                    updateConfigDisplay();
+                });
+            });
+
+            distributionButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    playClickSound();
+                    distributionButtons.forEach(b => b.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedDistribution = this.dataset.distribution;
+                    
+                    if (selectedDistribution === 'equal') {
+                        equalSizeOptions.style.display = 'block';
+                    } else {
+                        equalSizeOptions.style.display = 'none';
+                        selectedMemberCount = 0;
+                        memberCountButtons.forEach(b => b.classList.remove('selected'));
+                    }
+                    updateConfigDisplay();
+                });
+            });
+
+            memberCountButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    playClickSound();
+                    memberCountButtons.forEach(b => b.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedMemberCount = parseInt(this.dataset.members);
+                    updateConfigDisplay();
+                });
+            });
+
+            function updateConfigDisplay() {
+                const totalAvailable = Object.values(members).flat().length;
+                
+                if (!selectedTeamCount || !selectedDistribution) {
+                    configDisplay.textContent = 'Please select number of teams and distribution type';
+                    startBtn.disabled = true;
+                    return;
+                }
+
+                if (selectedDistribution === 'equal') {
+                    if (!selectedMemberCount) {
+                        configDisplay.textContent = 'Please select members per team for equal distribution';
+                        startBtn.disabled = true;
+                        return;
+                    }
+                    
+                    const totalMembers = selectedTeamCount * selectedMemberCount;
+                    
+                    if (totalMembers <= totalAvailable) {
+                        configDisplay.innerHTML = `
+                            ✅ <strong>Equal Size:</strong> ${selectedTeamCount} teams with ${selectedMemberCount} members each<br>
+                            Total members: <strong>${totalMembers}</strong> (Available: ${totalAvailable})
+                        `;
+                        startBtn.disabled = false;
+                    } else {
+                        configDisplay.innerHTML = `
+                            ❌ <strong>Equal Size:</strong> ${selectedTeamCount} teams with ${selectedMemberCount} members each<br>
+                            Total needed: <strong>${totalMembers}</strong> but only <strong>${totalAvailable}</strong> available!
+                        `;
+                        startBtn.disabled = true;
+                    }
+                } else if (selectedDistribution === 'flexible') {
+                    const teamSizes = calculateFlexibleTeamSizes(selectedTeamCount, totalAvailable);
+                    const teamSizeText = teamSizes.map((size, index) => `Team ${teamNames[index]}: ${size}`).join(', ');
+                    
+                    configDisplay.innerHTML = `
+                        ✅ <strong>Flexible Size:</strong> ${selectedTeamCount} teams<br>
+                        Distribution: <strong>${teamSizeText}</strong><br>
+                        Total members: <strong>${totalAvailable}</strong> (All participants included!)
+                    `;
+                    startBtn.disabled = false;
+                }
+            }
+
+            startBtn.addEventListener('click', startRandomization);
+            resetBtn.addEventListener('click', resetToSetup);
+
+            // User interaction to enable audio context
+            document.addEventListener('click', function initAudio() {
+                resumeAudioContext();
+                // Keep the listener active for multiple interactions
+            });
+
+            // Also try to resume on any button click
+            document.addEventListener('click', function(e) {
+                if (e.target.matches('button')) {
+                    resumeAudioContext();
+                }
+            });
+        });
+
+        function calculateFlexibleTeamSizes(teamCount, totalMembers) {
+            const baseSize = Math.floor(totalMembers / teamCount);
+            const remainder = totalMembers % teamCount;
+            
+            const teamSizes = new Array(teamCount).fill(baseSize);
+            
+            for (let i = 0; i < remainder; i++) {
+                teamSizes[i]++;
+            }
+            
+            return teamSizes;
+        }
+
+        function startRandomization() {
+            if (isAnimating) return;
+            
+            playStartSound();
+            
+            document.getElementById('setupScreen').style.display = 'none';
+            document.getElementById('randomizationScreen').style.display = 'block';
+            
+            createTeams();
+            animateRandomization();
+        }
+
+        function createTeams() {
+            const teamsContainer = document.getElementById('teamsContainer');
+            teamsContainer.innerHTML = '';
+            
+            teamsContainer.className = 'teams-container';
+            if (selectedTeamCount === 2) teamsContainer.classList.add('two-teams');
+            else if (selectedTeamCount === 3) teamsContainer.classList.add('three-teams');
+            else if (selectedTeamCount === 4) teamsContainer.classList.add('four-teams');
+            else if (selectedTeamCount === 5) teamsContainer.classList.add('five-teams');
+            
+            let teamSizes;
+            if (selectedDistribution === 'equal') {
+                teamSizes = new Array(selectedTeamCount).fill(selectedMemberCount);
+            } else {
+                const totalAvailable = Object.values(members).flat().length;
+                teamSizes = calculateFlexibleTeamSizes(selectedTeamCount, totalAvailable);
+            }
+            
+            for (let i = 0; i < selectedTeamCount; i++) {
+                const teamDiv = document.createElement('div');
+                teamDiv.className = `team ${teamClasses[i]}`;
+                teamDiv.innerHTML = `
+                    <h2>${teamEmojis[i]} Team ${teamNames[i]} (${teamSizes[i]} members)</h2>
+                    <div class="team-members" id="team${i}Members"></div>
+                `;
+                teamsContainer.appendChild(teamDiv);
+                
+                const membersContainer = teamDiv.querySelector('.team-members');
+                for (let j = 0; j < teamSizes[i]; j++) {
+                    const slot = document.createElement('div');
+                    slot.className = 'member-slot';
+                    slot.textContent = '???';
+                    membersContainer.appendChild(slot);
+                }
+            }
+        }
+
+        function generateTeams() {
+            let teamSizes;
+            if (selectedDistribution === 'equal') {
+                teamSizes = new Array(selectedTeamCount).fill(selectedMemberCount);
+            } else {
+                const totalAvailable = Object.values(members).flat().length;
+                teamSizes = calculateFlexibleTeamSizes(selectedTeamCount, totalAvailable);
+            }
+            
+            const totalMembers = teamSizes.reduce((sum, size) => sum + size, 0);
+            
+            const groupSizes = {
+                SBCC: members.SBCC.length,
+                CBCC: members.CBCC.length,
+                PBCC: members.PBCC.length
+            };
+            
+            const minFromEach = Math.max(1, Math.floor(totalMembers / 8));
+            
+            let bestTeams = null;
+            let bestBalance = -1;
+            
+            for (let attempt = 0; attempt < 200; attempt++) {
+                const selectedMembers = [];
+                
+                const cbccShuffled = [...members.CBCC].sort(() => Math.random() - 0.5);
+                const pbccShuffled = [...members.PBCC].sort(() => Math.random() - 0.5);
+                const sbccShuffled = [...members.SBCC].sort(() => Math.random() - 0.5);
+                
+                const guaranteedCBCC = Math.min(minFromEach, cbccShuffled.length);
+                const guaranteedPBCC = Math.min(minFromEach, pbccShuffled.length);
+                const remainingSlots = totalMembers - guaranteedCBCC - guaranteedPBCC;
+                
+                for (let i = 0; i < guaranteedCBCC; i++) {
+                    selectedMembers.push({ name: cbccShuffled[i], group: 'CBCC' });
+                }
+                for (let i = 0; i < guaranteedPBCC; i++) {
+                    selectedMembers.push({ name: pbccShuffled[i], group: 'PBCC' });
+                }
+                
+                const remainingMembers = [];
+                
+                for (let i = guaranteedCBCC; i < cbccShuffled.length; i++) {
+                    remainingMembers.push({ name: cbccShuffled[i], group: 'CBCC' });
+                }
+                for (let i = guaranteedPBCC; i < pbccShuffled.length; i++) {
+                    remainingMembers.push({ name: pbccShuffled[i], group: 'PBCC' });
+                }
+                
+                const maxSBCCToAdd = Math.min(remainingSlots, sbccShuffled.length);
+                for (let i = 0; i < maxSBCCToAdd; i++) {
+                    remainingMembers.push({ name: sbccShuffled[i], group: 'SBCC' });
+                }
+                
+                remainingMembers.sort(() => Math.random() - 0.5);
+                for (let i = 0; i < remainingSlots && i < remainingMembers.length; i++) {
+                    selectedMembers.push(remainingMembers[i]);
+                }
+                
+                while (selectedMembers.length < totalMembers) {
+                    const allRemaining = [
+                        ...sbccShuffled.filter(name => !selectedMembers.some(m => m.name === name)),
+                        ...cbccShuffled.filter(name => !selectedMembers.some(m => m.name === name)),
+                        ...pbccShuffled.filter(name => !selectedMembers.some(m => m.name === name))
+                    ];
+                    
+                    if (allRemaining.length === 0) break;
+                    
+                    const randomMember = allRemaining[Math.floor(Math.random() * allRemaining.length)];
+                    const group = members.SBCC.includes(randomMember) ? 'SBCC' : 
+                                 members.CBCC.includes(randomMember) ? 'CBCC' : 'PBCC';
+                    selectedMembers.push({ name: randomMember, group });
+                }
+                
+                selectedMembers.sort(() => Math.random() - 0.5);
+                const teams = [];
+                let currentIndex = 0;
+                
+                for (let i = 0; i < selectedTeamCount; i++) {
+                    teams.push(selectedMembers.slice(currentIndex, currentIndex + teamSizes[i]));
+                    currentIndex += teamSizes[i];
+                }
+                
+                let allTeamsHaveRepresentation = true;
+                teams.forEach((team, index) => {
+                    const teamGroups = new Set(team.map(m => m.group));
+                    if (teamSizes[index] >= 7 && teamGroups.size < 2) {
+                        allTeamsHaveRepresentation = false;
+                    }
+                });
+                
+                if (allTeamsHaveRepresentation) {
+                    const totalCounts = { SBCC: 0, CBCC: 0, PBCC: 0 };
+                    selectedMembers.forEach(m => totalCounts[m.group]++);
+                    const balanceScore = (totalCounts.CBCC * 2) + (totalCounts.PBCC * 2) + (totalCounts.SBCC * 0.5);
+                    
+                    if (balanceScore > bestBalance) {
+                        bestBalance = balanceScore;
+                        bestTeams = teams;
+                    }
+                }
+            }
+            
+            if (bestTeams) {
+                return bestTeams;
+            }
+            
+            const allMembers = [];
+            Object.keys(members).forEach(group => {
+                members[group].forEach(name => {
+                    allMembers.push({ name, group });
+                });
+            });
+            
+            const shuffled = [...allMembers].sort(() => Math.random() - 0.5);
+            const selected = shuffled.slice(0, totalMembers);
+            
+            const teams = [];
+            let currentIndex = 0;
+            
+            for (let i = 0; i < selectedTeamCount; i++) {
+                teams.push(selected.slice(currentIndex, currentIndex + teamSizes[i]));
+                currentIndex += teamSizes[i];
+            }
+            
+            return teams;
+        }
+
+        function animateRandomization() {
+            isAnimating = true;
+            const teams = generateTeams();
+            
+            const maxTeamSize = Math.max(...teams.map(team => team.length));
+            
+            let currentSlot = 0;
+            const animationDelay = 3000;
+            
+            function revealNextMember() {
+                if (currentSlot >= maxTeamSize) {
+                    isAnimating = false;
+                    playCompletionSound();
+                    return;
+                }
+                
+                const teamSlots = [];
+                for (let i = 0; i < selectedTeamCount; i++) {
+                    const slot = document.querySelector(`#team${i}Members .member-slot:nth-child(${currentSlot + 1})`);
+                    if (slot && teams[i] && currentSlot < teams[i].length) {
+                        teamSlots.push({ slot, teamIndex: i, member: teams[i][currentSlot] });
+                    }
+                }
+                
+                if (teamSlots.length === 0) {
+                    currentSlot++;
+                    setTimeout(revealNextMember, 100);
+                    return;
+                }
+                
+                teamSlots.forEach(({slot}) => slot.classList.add('animating'));
+                
+                let animationCount = 0;
+                const maxAnimations = 20;
+                let spinSoundInterval;
+                
+                if (sfxEnabled) {
+                    spinSoundInterval = setInterval(() => {
+                        // Intensify the spin sound as animation progresses
+                        const intensityFactor = (animationCount / maxAnimations) + 0.5;
+                        const baseFreq = 600 + (animationCount * 20); // Rising pitch
+                        playIntenseTone([baseFreq, baseFreq * 1.5, baseFreq * 2], 0.08, 'square', 0.4 * intensityFactor);
+                    }, 180 - (animationCount * 5)); // Getting faster!
+                }
+                
+                const animationInterval = setInterval(() => {
+                    const randomMembers = Object.values(members).flat();
+                    
+                    teamSlots.forEach(({slot}) => {
+                        const randomName = randomMembers[Math.floor(Math.random() * randomMembers.length)];
+                        slot.textContent = randomName.toUpperCase();
+                    });
+                    
+                    animationCount++;
+                    if (animationCount >= maxAnimations) {
+                        clearInterval(animationInterval);
+                        if (spinSoundInterval) clearInterval(spinSoundInterval);
+                        
+                        setTimeout(() => {
+                            playRevealSound();
+                            
+                            teamSlots.forEach(({slot, member}) => {
+                                slot.textContent = member.name.toUpperCase();
+                                slot.classList.remove('animating');
+                                slot.classList.add('final', member.group.toLowerCase());
+                            });
+                            
+                            document.body.style.animation = 'screenShake 0.5s ease-in-out';
+                            
+                            setTimeout(() => {
+                                document.body.style.animation = '';
+                                teamSlots.forEach(({slot, member}) => {
+                                    slot.classList.remove('final');
+                                    slot.textContent = member.name;
+                                });
+                            }, 1000);
+                            
+                            currentSlot++;
+                            setTimeout(revealNextMember, 800);
+                        }, 300);
+                    }
+                }, 80);
+            }
+            
+            revealNextMember();
+        }
+
+        function resetToSetup() {
+            playClickSound();
+            stopBackgroundMusic();
+            document.getElementById('setupScreen').style.display = 'block';
+            document.getElementById('randomizationScreen').style.display = 'none';
+            isAnimating = false;
+        }
+    </script>
+</body>
+</html>
