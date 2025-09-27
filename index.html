@@ -632,10 +632,10 @@
         const members = {
             SBCC: [
                 "Gian Troy Cahigas", "Joshua Ramos", "Kim Morales", "Nathalie R. Rizaldo",
-                "Raf Rossen Cambel", "Rhien Magcalas", "Gab Cortez", "Jez Ramos",
+                "Raf Rossen Cambel", "Rhien Magcalas", "Gab Cortez", 
                 "Vona Caguite", "Hannah Tominez", "Jhuliene Dasic", "Jashlyn Sinalo",
                 "Romico Apabricio", "Heizel Tominez", "Eunice Manalo", "Erich Caliwan",
-                "Erin Caliwan", "Pia Deleon", "Voni Caguite", "Drix Desipeda",
+                "Erin Caliwan", "Drix Desipeda",
                 "Terenz Dasic", "Jessa Mae Ramos"
             ],
             CBCC: [
@@ -643,7 +643,7 @@
             ],
             PBCC: [
                 "Martha", "Mary", "Yumi", "Patz", "Vallen", "Lawrence",
-                "Joshua", "Kuya Glenn", "Alejandra", "Calix", "Sam",
+                "Joshua","Alejandra", "Calix", "Sam",
                 "Amphie", "Yuckie", "Bon"
             ]
         };
@@ -789,7 +789,7 @@
             
             // Orchestral finale with multiple layers
             const finaleSequence = [
-                { freqs: [130, 164, 196, 261, 329], duration: 0.8, delay: 0 },    // C major
+                { freqs: [130, 165, 196, 261, 329], duration: 0.8, delay: 0 },    // C major
                 { freqs: [147, 185, 220, 294, 370], duration: 0.8, delay: 200 },  // D major  
                 { freqs: [165, 208, 247, 330, 415], duration: 0.8, delay: 400 },  // E major
                 { freqs: [175, 220, 262, 349, 440], duration: 0.8, delay: 600 },  // F major
@@ -1144,7 +1144,7 @@
             resetBtn.addEventListener('click', resetToSetup);
 
             // User interaction to enable audio context
-            document.addEventListener('click', function initAudio() {
+            document.addEventListener('click', function() {
                 resumeAudioContext();
                 // Keep the listener active for multiple interactions
             });
@@ -1219,7 +1219,7 @@
             }
         }
 
-        // CORRECTED TEAM GENERATION LOGIC - Fixed SBCC selection bias
+        // FIXED TEAM GENERATION LOGIC - Better balanced distribution
         function generateTeams() {
             let teamSizes;
             if (selectedDistribution === 'equal') {
@@ -1238,116 +1238,129 @@
                 PBCC: members.PBCC.length
             };
             
+            console.log(`Group sizes: SBCC: ${groupCounts.SBCC}, CBCC: ${groupCounts.CBCC}, PBCC: ${groupCounts.PBCC}`);
+            
             let bestTeams = null;
             let bestScore = -1;
-            const maxAttempts = 300; // Increased attempts for better results
+            const maxAttempts = 200;
             
             for (let attempt = 0; attempt < maxAttempts; attempt++) {
                 try {
                     const selectedMembers = [];
                     
-                    // Calculate proportional representation based on group sizes
+                    // Calculate more balanced distribution
                     const totalAvailable = groupCounts.SBCC + groupCounts.CBCC + groupCounts.PBCC;
                     
-                    // Calculate ideal distribution proportions
-                    const idealSBCC = Math.round((groupCounts.SBCC / totalAvailable) * totalMembers);
-                    const idealCBCC = Math.round((groupCounts.CBCC / totalAvailable) * totalMembers);
-                    const idealPBCC = Math.round((groupCounts.PBCC / totalAvailable) * totalMembers);
+                    // Instead of pure proportional, aim for more balanced representation
+                    // Give each group a minimum base, then distribute remaining proportionally
+                    const minPerGroup = Math.max(1, Math.floor(totalMembers * 0.15)); // At least 15% each if possible
                     
-                    // Adjust to ensure we don't exceed total members
-                    let adjustedSBCC = Math.min(idealSBCC, groupCounts.SBCC);
-                    let adjustedCBCC = Math.min(idealCBCC, groupCounts.CBCC);
-                    let adjustedPBCC = Math.min(idealPBCC, groupCounts.PBCC);
+                    let targetSBCC = Math.min(minPerGroup, groupCounts.SBCC);
+                    let targetCBCC = Math.min(minPerGroup, groupCounts.CBCC);
+                    let targetPBCC = Math.min(minPerGroup, groupCounts.PBCC);
                     
-                    // Ensure we have enough members
-                    const currentTotal = adjustedSBCC + adjustedCBCC + adjustedPBCC;
+                    let remainingMembers = totalMembers - (targetSBCC + targetCBCC + targetPBCC);
                     
-                    if (currentTotal < totalMembers) {
-                        // Distribute remaining slots proportionally
-                        const remaining = totalMembers - currentTotal;
-                        const availableExtra = {
-                            SBCC: groupCounts.SBCC - adjustedSBCC,
-                            CBCC: groupCounts.CBCC - adjustedCBCC,
-                            PBCC: groupCounts.PBCC - adjustedPBCC
+                    if (remainingMembers > 0) {
+                        // Distribute remaining members more evenly, with slight preference for larger groups
+                        const weights = {
+                            SBCC: Math.sqrt(groupCounts.SBCC), // Square root to reduce the advantage of larger groups
+                            CBCC: Math.sqrt(groupCounts.CBCC),
+                            PBCC: Math.sqrt(groupCounts.PBCC)
                         };
                         
-                        // Add remaining members, prioritizing groups with more available members
-                        let remainingToAdd = remaining;
-                        while (remainingToAdd > 0) {
-                            let added = false;
+                        const totalWeight = weights.SBCC + weights.CBCC + weights.PBCC;
+                        
+                        // Distribute remaining members based on adjusted weights
+                        const additionalSBCC = Math.min(
+                            Math.round((weights.SBCC / totalWeight) * remainingMembers),
+                            groupCounts.SBCC - targetSBCC
+                        );
+                        const additionalCBCC = Math.min(
+                            Math.round((weights.CBCC / totalWeight) * remainingMembers),
+                            groupCounts.CBCC - targetCBCC
+                        );
+                        
+                        targetSBCC += additionalSBCC;
+                        targetCBCC += additionalCBCC;
+                        
+                        // Give remaining to PBCC or redistribute if needed
+                        const stillRemaining = totalMembers - (targetSBCC + targetCBCC + targetPBCC);
+                        targetPBCC = Math.min(targetPBCC + stillRemaining, groupCounts.PBCC);
+                        
+                        // Final adjustment if we still don't have enough
+                        const finalRemaining = totalMembers - (targetSBCC + targetCBCC + targetPBCC);
+                        if (finalRemaining > 0) {
+                            // Add to groups with most availability
+                            const availability = [
+                                { group: 'SBCC', available: groupCounts.SBCC - targetSBCC },
+                                { group: 'CBCC', available: groupCounts.CBCC - targetCBCC },
+                                { group: 'PBCC', available: groupCounts.PBCC - targetPBCC }
+                            ].filter(g => g.available > 0).sort((a, b) => b.available - a.available);
                             
-                            // Try to add from SBCC first (largest group)
-                            if (availableExtra.SBCC > 0 && remainingToAdd > 0) {
-                                adjustedSBCC++;
-                                availableExtra.SBCC--;
-                                remainingToAdd--;
-                                added = true;
-                            }
-                            
-                            // Then PBCC
-                            if (availableExtra.PBCC > 0 && remainingToAdd > 0) {
-                                adjustedPBCC++;
-                                availableExtra.PBCC--;
-                                remainingToAdd--;
-                                added = true;
-                            }
-                            
-                            // Then CBCC
-                            if (availableExtra.CBCC > 0 && remainingToAdd > 0) {
-                                adjustedCBCC++;
-                                availableExtra.CBCC--;
-                                remainingToAdd--;
-                                added = true;
-                            }
-                            
-                            // Safety break to avoid infinite loop
-                            if (!added) break;
-                        }
-                    } else if (currentTotal > totalMembers) {
-                        // Need to reduce - reduce largest groups first
-                        let excess = currentTotal - totalMembers;
-                        while (excess > 0) {
-                            if (adjustedSBCC > 1 && excess > 0) {
-                                adjustedSBCC--;
-                                excess--;
-                            } else if (adjustedPBCC > 1 && excess > 0) {
-                                adjustedPBCC--;
-                                excess--;
-                            } else if (adjustedCBCC > 1 && excess > 0) {
-                                adjustedCBCC--;
-                                excess--;
-                            } else {
-                                break;
+                            let toDistribute = finalRemaining;
+                            for (const { group } of availability) {
+                                if (toDistribute <= 0) break;
+                                const canAdd = Math.min(toDistribute, availability.find(a => a.group === group).available);
+                                if (group === 'SBCC') targetSBCC += canAdd;
+                                else if (group === 'CBCC') targetCBCC += canAdd;
+                                else if (group === 'PBCC') targetPBCC += canAdd;
+                                toDistribute -= canAdd;
                             }
                         }
                     }
                     
+                    // Ensure we don't exceed available members
+                    targetSBCC = Math.min(targetSBCC, groupCounts.SBCC);
+                    targetCBCC = Math.min(targetCBCC, groupCounts.CBCC);
+                    targetPBCC = Math.min(targetPBCC, groupCounts.PBCC);
+                    
+                    // Final check - ensure we have exactly the right total
+                    const currentTotal = targetSBCC + targetCBCC + targetPBCC;
+                    if (currentTotal !== totalMembers) {
+                        const diff = totalMembers - currentTotal;
+                        if (diff > 0) {
+                            // Need more members - add to group with most available
+                            if (groupCounts.SBCC - targetSBCC >= diff) targetSBCC += diff;
+                            else if (groupCounts.CBCC - targetCBCC >= diff) targetCBCC += diff;
+                            else if (groupCounts.PBCC - targetPBCC >= diff) targetPBCC += diff;
+                        } else if (diff < 0) {
+                            // Too many members - remove from largest allocation
+                            const absDiff = Math.abs(diff);
+                            if (targetSBCC >= absDiff) targetSBCC -= absDiff;
+                            else if (targetCBCC >= absDiff) targetCBCC -= absDiff;
+                            else if (targetPBCC >= absDiff) targetPBCC -= absDiff;
+                        }
+                    }
+                    
+                    console.log(`Attempt ${attempt}: Target distribution - SBCC: ${targetSBCC}, CBCC: ${targetCBCC}, PBCC: ${targetPBCC}, Total: ${targetSBCC + targetCBCC + targetPBCC}`);
+                    
                     // Randomly select members from each group
                     const selectedSBCC = [...members.SBCC]
                         .sort(() => Math.random() - 0.5)
-                        .slice(0, adjustedSBCC)
+                        .slice(0, targetSBCC)
                         .map(name => ({ name, group: 'SBCC' }));
                         
                     const selectedCBCC = [...members.CBCC]
                         .sort(() => Math.random() - 0.5)
-                        .slice(0, adjustedCBCC)
+                        .slice(0, targetCBCC)
                         .map(name => ({ name, group: 'CBCC' }));
                         
                     const selectedPBCC = [...members.PBCC]
                         .sort(() => Math.random() - 0.5)
-                        .slice(0, adjustedPBCC)
+                        .slice(0, targetPBCC)
                         .map(name => ({ name, group: 'PBCC' }));
                     
                     // Combine all selected members
                     selectedMembers.push(...selectedSBCC, ...selectedCBCC, ...selectedPBCC);
                     
-                    // Final safety check
+                    // Verify we have the correct total
                     if (selectedMembers.length !== totalMembers) {
-                        console.warn(`Member count mismatch: expected ${totalMembers}, got ${selectedMembers.length}`);
+                        console.warn(`Attempt ${attempt}: Member count mismatch: expected ${totalMembers}, got ${selectedMembers.length}`);
                         continue;
                     }
                     
-                    // Shuffle all selected members
+                    // Shuffle all selected members for fair distribution
                     selectedMembers.sort(() => Math.random() - 0.5);
                     
                     // Distribute into teams
@@ -1359,53 +1372,37 @@
                         currentIndex += teamSizes[i];
                     }
                     
-                    // Validate team composition - ensure reasonable diversity
-                    let validTeams = true;
-                    for (let i = 0; i < teams.length; i++) {
-                        const team = teams[i];
-                        const teamGroups = new Set(team.map(m => m.group));
+                    // Calculate balance score - prefer more even distribution
+                    const actualCounts = { 
+                        SBCC: selectedSBCC.length, 
+                        CBCC: selectedCBCC.length, 
+                        PBCC: selectedPBCC.length 
+                    };
+                    
+                    // Score based on how evenly distributed the groups are
+                    const maxCount = Math.max(actualCounts.SBCC, actualCounts.CBCC, actualCounts.PBCC);
+                    const minCount = Math.min(actualCounts.SBCC, actualCounts.CBCC, actualCounts.PBCC);
+                    const evenness = minCount / maxCount; // Higher score for more even distribution
+                    
+                    // Also consider if all groups are represented
+                    const groupsRepresented = (actualCounts.SBCC > 0 ? 1 : 0) + 
+                                            (actualCounts.CBCC > 0 ? 1 : 0) + 
+                                            (actualCounts.PBCC > 0 ? 1 : 0);
+                    const representationBonus = groupsRepresented / 3;
+                    
+                    const balanceScore = (evenness * 0.7) + (representationBonus * 0.3);
+                    
+                    if (balanceScore > bestScore || bestTeams === null) {
+                        bestScore = balanceScore;
+                        bestTeams = teams;
                         
-                        // For teams of 7+ members, ensure at least 2 different groups
-                        if (teamSizes[i] >= 7 && teamGroups.size < 2) {
-                            validTeams = false;
-                            break;
-                        }
+                        console.log(`Attempt ${attempt}: SBCC: ${actualCounts.SBCC}, CBCC: ${actualCounts.CBCC}, PBCC: ${actualCounts.PBCC}, Balance Score: ${balanceScore.toFixed(3)}`);
                     }
                     
-                    if (validTeams) {
-                        // Calculate balance score - favor proportional representation
-                        const actualCounts = { SBCC: adjustedSBCC, CBCC: adjustedCBCC, PBCC: adjustedPBCC };
-                        const expectedRatios = {
-                            SBCC: groupCounts.SBCC / totalAvailable,
-                            CBCC: groupCounts.CBCC / totalAvailable, 
-                            PBCC: groupCounts.PBCC / totalAvailable
-                        };
-                        const actualRatios = {
-                            SBCC: actualCounts.SBCC / totalMembers,
-                            CBCC: actualCounts.CBCC / totalMembers,
-                            PBCC: actualCounts.PBCC / totalMembers
-                        };
-                        
-                        // Score based on how close we are to expected proportions
-                        const sbccDiff = Math.abs(expectedRatios.SBCC - actualRatios.SBCC);
-                        const cbccDiff = Math.abs(expectedRatios.CBCC - actualRatios.CBCC);
-                        const pbccDiff = Math.abs(expectedRatios.PBCC - actualRatios.PBCC);
-                        
-                        const balanceScore = 1 - (sbccDiff + cbccDiff + pbccDiff); // Higher is better
-                        
-                        if (balanceScore > bestScore) {
-                            bestScore = balanceScore;
-                            bestTeams = teams;
-                            
-                            // Log the distribution for debugging
-                            console.log(`Attempt ${attempt}: SBCC: ${actualCounts.SBCC}, CBCC: ${actualCounts.CBCC}, PBCC: ${actualCounts.PBCC}, Score: ${balanceScore.toFixed(3)}`);
-                        }
-                        
-                        // If we have a very good balance, we can stop early
-                        if (balanceScore > 0.95) {
-                            console.log(`Excellent balance found on attempt ${attempt}`);
-                            break;
-                        }
+                    // Accept good balance faster
+                    if (balanceScore > 0.80) {
+                        console.log(`Good balance found on attempt ${attempt}`);
+                        break;
                     }
                     
                 } catch (error) {
@@ -1414,32 +1411,59 @@
                 }
             }
             
-            // If we found good teams, return them
+            // Return best teams found
             if (bestTeams) {
-                console.log(`Best team composition found with score: ${bestScore.toFixed(3)}`);
+                const finalCounts = {
+                    SBCC: bestTeams.flat().filter(m => m.group === 'SBCC').length,
+                    CBCC: bestTeams.flat().filter(m => m.group === 'CBCC').length,
+                    PBCC: bestTeams.flat().filter(m => m.group === 'PBCC').length
+                };
+                console.log(`Final distribution: SBCC: ${finalCounts.SBCC}, CBCC: ${finalCounts.CBCC}, PBCC: ${finalCounts.PBCC}`);
                 return bestTeams;
             }
             
-            // Fallback: Simple random distribution if nothing good was found
-            console.warn('Using fallback random distribution');
+            // Emergency fallback - even simpler approach
+            console.warn('Using emergency fallback - simplified balanced selection');
             const allMembers = [];
-            Object.keys(members).forEach(group => {
-                members[group].forEach(name => {
-                    allMembers.push({ name, group });
-                });
-            });
             
-            const shuffled = [...allMembers].sort(() => Math.random() - 0.5);
-            const selected = shuffled.slice(0, totalMembers);
+            // Try to get roughly equal numbers from each group, up to available limits
+            const idealPerGroup = Math.floor(totalMembers / 3);
+            const remainder = totalMembers % 3;
+            
+            let sbccTake = Math.min(idealPerGroup, groupCounts.SBCC);
+            let cbccTake = Math.min(idealPerGroup, groupCounts.CBCC);
+            let pbccTake = Math.min(idealPerGroup, groupCounts.PBCC);
+            
+            // Distribute remainder
+            const remaining = totalMembers - (sbccTake + cbccTake + pbccTake);
+            if (remaining > 0) {
+                // Add remaining to groups that can take them
+                if (remaining >= 1 && sbccTake < groupCounts.SBCC) sbccTake++;
+                if (remaining >= 2 && cbccTake < groupCounts.CBCC) cbccTake++;
+                if (remaining >= 3 && pbccTake < groupCounts.PBCC) pbccTake++;
+            }
+            
+            const selectedSBCC = [...members.SBCC].sort(() => Math.random() - 0.5).slice(0, sbccTake);
+            const selectedCBCC = [...members.CBCC].sort(() => Math.random() - 0.5).slice(0, cbccTake);
+            const selectedPBCC = [...members.PBCC].sort(() => Math.random() - 0.5).slice(0, pbccTake);
+            
+            selectedSBCC.forEach(name => allMembers.push({ name, group: 'SBCC' }));
+            selectedCBCC.forEach(name => allMembers.push({ name, group: 'CBCC' }));
+            selectedPBCC.forEach(name => allMembers.push({ name, group: 'PBCC' }));
+            
+            // Shuffle and distribute
+            allMembers.sort(() => Math.random() - 0.5);
             
             const teams = [];
             let currentIndex = 0;
             
             for (let i = 0; i < selectedTeamCount; i++) {
-                teams.push(selected.slice(currentIndex, currentIndex + teamSizes[i]));
-                currentIndex += teamSizes[i];
+                const teamSize = teamSizes[i];
+                teams.push(allMembers.slice(currentIndex, currentIndex + teamSize));
+                currentIndex += teamSize;
             }
             
+            console.log(`Fallback distribution: SBCC: ${selectedSBCC.length}, CBCC: ${selectedCBCC.length}, PBCC: ${selectedPBCC.length}`);
             return teams;
         }
 
